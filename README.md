@@ -11,7 +11,7 @@
    - "repositoryName" : repository to associate with this upload
    - "commitName" : commit to associate with this upload
 3. If a request to upload is successful it will automatically send a request to start a scan. You should see a message akin to "HTTP 200 Files were uploaded successfully and scan started with repositoryId 123 and commitId 456 and ci-uploadId 789."
-4. Once a file is uploaded and it's scan started, a record with it's details will be saved in the MySQL database with status set to "start".
+4. Once a file is uploaded and its scan started, a record with its details and audit timestamps will be saved in the MySQL database with status set to "start".
 5. If for some reason a file upload wasn't successful then a scan will not be started and you will be shown an error message.
 6. There is no notification system to update the user about the status of scans yet, but you should see some log statements in the Java app's console about the status.
 7. The status system will poll debricked's status endpoint every 10s and update the status in the database.
