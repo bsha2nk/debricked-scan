@@ -32,11 +32,13 @@ public class ScanStatusPoller {
 	@Value("${jwt-token}")
 	private String jwtToken;
 
-	@Scheduled(fixedRate = 30000)
+	@Scheduled(fixedRate = 10000)
 	private void pollStatus() {
 		List<Scan> scans = scanRepository.findIncompleteScans();
 		if (!scans.isEmpty()) {
 			System.out.println("Found incomplete scans, will poll for current status.");
+		} else {
+			System.out.println("All scans completed.");
 		}
 		
 		HttpHeaders headers = new HttpHeaders();
@@ -60,8 +62,8 @@ public class ScanStatusPoller {
 					String status = jsonNode.findValue("progress").asText();
 					if (status.equals("100")) {
 						scan.setStatus("complete");
-						//TODO Setup a message broker to notification service and send a message indicating completed status fo id
-						//Notification service can be a separate service
+						//TODO Notification service can be a separate service
+						// Setup a message broker to notification service and send a message indicating completed status for the id
 					} else {
 						scan.setStatus("progress");
 					}
@@ -70,8 +72,6 @@ public class ScanStatusPoller {
 					throw new RuntimeException("Error retrieving status for upload id " + scan.getUploadId());
 				}
 			}
-			
-			System.out.println(statusResponse);
 		});
 	}
 	

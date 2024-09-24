@@ -1,7 +1,5 @@
 package com.bsha2nk.controller;
 
-import java.io.IOException;
-
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,11 +22,16 @@ public class ScanFilesController {
 	
 	@PostMapping(value = "/files/upload", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
 	public ResponseEntity<String> uploadFiles(@RequestParam MultipartFile[] files, @RequestParam String jwtToken,
-			@RequestParam String repositoryName, @RequestParam String commitName) throws IOException {
+			@RequestParam String repositoryName, @RequestParam String commitName) throws Exception {
 		
-		String response = uploadToDebricked.upload(files, jwtToken, repositoryName, commitName);
 		
-		return ResponseEntity.ok(response);
+		try {
+			String response = uploadToDebricked.upload(files, jwtToken, repositoryName, commitName);			
+			return ResponseEntity.ok(response);
+		} catch(Exception e) {
+			throw new Exception(e.getMessage());
+		}
+		
 	}
 
 }
