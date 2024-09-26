@@ -3,8 +3,6 @@ services:
     image: debricked-scan
     ports:
       - 8080:8080
-    networks:
-      - debricked-net
     environment:
       - spring.datasource.url=jdbc:mysql://mysqldb:3306/debricked-scans
       - jwt-token=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzUxMiJ9.eyJpYXQiOjE3MjcxOTI4MzYsImV4cCI6MTcyNzE5NjQzNiwicm9sZXMiOlsiUk9MRV9VU0VSIiwiUk9MRV9DT01QQU5ZX0FETUlOIiwiUk9MRV9SRVBPU0lUT1JZX0FETUlOIl0sImVtYWlsIjoiYnNoYTJua0BnbWFpbC5jb20ifQ.Bo8HzITQHfzqa6IG90ycdSBVmOGHPSRIx5E5TG2PfCmw573FODnMDvsILRMqURwdkfzAUo2KApSGjFdWXxF8RJi2tpxd_PkVqxbv935nRNW3xwCBncGTNHluvxnEhhMrThLLMr_SznHUhzo9rTxn5MYiTIOfa77CnDjNr9LPq89z1OMPUzOrzs32wNTq_jrkYX5fQF2VLqd5M6zOVHQ5MXoxwkxf2FztJmkpEEDSIa6hVQXqMgul-U3n6K5es2aBwGLtGb1S-LLYfNtbpSt8XOwr9e33siMQDznvZKLrLg3g73Tq-ZKolQtBxA-2bcW9nYinjJiuTwZRUMbxDkDN31AEHaO2brs84ClbTy0MUlRLfHlPt-v4sU4Be_VSXIACnPlXYV9xbLPnLCC7V1fCGC-eduNBCTRP5zztjeRSVuUHr3nEGMR7hfEcOxNIvZiM4BkvFO_TD2TUm2qbzRGy1XhrubciD4oxW46MYrid-2l5j2fr-Fm3cNCpBqn-WTpGOcH7G4XYijvYTTSGiWjqb6LZDV5f_B-Z4HT9v_a4ZOY3jaMbn0bUTNZ-Z7b3zkDB_mtAHEOxSkmLK9LUABCSUeDNqzowiGpPAy88NUwc-8fraMWZs-3_OJlFrv1_Zo7gbFrJ_66WlMLibnNWV4Vpg_LDQgjnXEnciEUSrJT5ImY
@@ -15,8 +13,6 @@ services:
     image: mysql
     ports:
       - 3306:3306
-    networks:
-      - debricked-net
     healthcheck:
       test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
       retries: 10
@@ -27,5 +23,3 @@ services:
       MYSQL_USER: dbs
       MYSQL_PASSWORD: dbs
       MYSQL_ROOT_PASSWORD: root
-networks:
-  debricked-net:

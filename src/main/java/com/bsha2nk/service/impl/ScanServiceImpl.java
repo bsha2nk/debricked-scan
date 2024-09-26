@@ -14,6 +14,7 @@ import com.bsha2nk.exception.ScanStartException;
 import com.bsha2nk.repository.ScanRepository;
 import com.bsha2nk.util.URLConstants;
 import com.bsha2nk.util.Utilities;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -29,7 +30,7 @@ public class ScanServiceImpl {
 	@Autowired
 	private ScanRepository scanRepository;
 
-	public String startScan(String ciUploadId, String jwtToken) throws Exception {
+	public String startScan(String ciUploadId, String jwtToken) throws JsonProcessingException {
 		HttpHeaders headers = Utilities.getMultipartHeaders(jwtToken);
 
 		MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();

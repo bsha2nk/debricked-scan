@@ -15,7 +15,7 @@ public class DebrickedScanApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(DebrickedScanApplication.class, args);
 	}
-
+	
     @Bean
     ObjectMapper getObjetcMapper() {
 		return new ObjectMapper();

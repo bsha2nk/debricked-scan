@@ -23,8 +23,6 @@ public class ScanFilesController {
 	@PostMapping(value = "/files/upload", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
 	public ResponseEntity<String> uploadFiles(@RequestParam MultipartFile[] files, @RequestParam String jwtToken,
 			@RequestParam String repositoryName, @RequestParam String commitName) throws Exception {
-		
-		
 		try {
 			String response = uploadToDebricked.upload(files, jwtToken, repositoryName, commitName);			
 			return ResponseEntity.ok(response);

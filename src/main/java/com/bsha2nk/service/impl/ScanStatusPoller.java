@@ -32,7 +32,7 @@ public class ScanStatusPoller {
 	@Value("${jwt-token}")
 	private String jwtToken;
 
-	@Scheduled(fixedRate = 10000)
+//	@Scheduled(fixedRate = 300000)
 	private void pollStatus() {
 		List<Scan> scans = scanRepository.findIncompleteScans();
 		if (!scans.isEmpty()) {

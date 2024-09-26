@@ -16,6 +16,8 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.bsha2nk.exception.FileUploadException;
+import com.bsha2nk.message.NotificationDTO;
+import com.bsha2nk.message.broker.RabbitMQSender;
 import com.bsha2nk.service.UploadService;
 import com.bsha2nk.util.URLConstants;
 import com.bsha2nk.util.Utilities;
@@ -32,10 +34,13 @@ public class UploadServiceImpl implements UploadService {
 	private RestTemplate restTemplate;
 	
 	@Autowired
+	private RabbitMQSender rabbitMQSender;
+	
+	@Autowired
 	private ScanServiceImpl scanService;
 	
 	@Override
-	public String upload(MultipartFile[] files, String jwtToken, String repositoryName, String commitName) throws Exception {
+	public String upload(MultipartFile[] files, String jwtToken, String repositoryName, String commitName) throws IOException {
 		String ciUploadId = "";
 
 		HttpHeaders headers = Utilities.getMultipartHeaders(jwtToken);
@@ -58,8 +63,9 @@ public class UploadServiceImpl implements UploadService {
 			try {
 				response = restTemplate.postForEntity(URLConstants.UPLOAD_URL, requestEntity, String.class);	
 			} catch (Exception e) {
-				System.out.println("File with name " + file.getOriginalFilename() + " could not be uploaded. Scan will not be started.");
-				throw new FileUploadException("File with name " + file.getOriginalFilename() + " could not be uploaded. Scan will not be started.");
+				String error = "File with name " + file.getOriginalFilename() + " could not be uploaded. Scan will not be started.";
+				sendNotification(ciUploadId, error);
+				throw new FileUploadException(error);
 			}
 
 			if (Objects.nonNull(response) && response.getStatusCode().is2xxSuccessful()) {
@@ -69,13 +75,28 @@ public class UploadServiceImpl implements UploadService {
 					ciUploadId = jsonNode.findValue("ciUploadId").asText();
 				}
 			} else {
-				System.out.println("File with name " + file.getOriginalFilename() + " could not be uploaded. Scan will not be started.");
-				throw new FileUploadException("File with name " + file.getOriginalFilename() + " could not be uploaded. Scan will not be started.");
+				String error = "File with name " + file.getOriginalFilename() + " could not be uploaded. Scan will not be started.";
+				sendNotification(ciUploadId, error);
+				throw new FileUploadException(error);
 			}
-
+			
 		}
+		
+		rabbitMQSender.sendMessage(NotificationDTO.builder()
+				.event("Upload Successful for " + ciUploadId)
+				.message(String.format("All files were uploaded successfully with ci-uploadId %s. Scan will be triggered.", ciUploadId))
+				.build());
 
 		return scanService.startScan(ciUploadId, jwtToken);
+	}
+
+	private void sendNotification(String ciUploadId, String error) {
+		System.out.println(error);
+		
+		rabbitMQSender.sendMessage(NotificationDTO.builder()
+				.event("Upload Unsuccessful" + (ciUploadId.isBlank() ? "" : " for CI Upload ID " + ciUploadId))
+				.message(error)
+				.build());
 	}
 
 	private String createTempFile(MultipartFile file) throws IOException {
