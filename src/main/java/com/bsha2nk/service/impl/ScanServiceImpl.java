@@ -11,6 +11,8 @@ import org.springframework.web.client.RestTemplate;
 
 import com.bsha2nk.entity.Scan;
 import com.bsha2nk.exception.ScanStartException;
+import com.bsha2nk.message.NotificationDTO;
+import com.bsha2nk.message.broker.RabbitMQSender;
 import com.bsha2nk.repository.ScanRepository;
 import com.bsha2nk.util.URLConstants;
 import com.bsha2nk.util.Utilities;
@@ -28,6 +30,9 @@ public class ScanServiceImpl {
 	private RestTemplate restTemplate;
 	
 	@Autowired
+	private RabbitMQSender rabbitMQSender;
+	
+	@Autowired
 	private ScanRepository scanRepository;
 
 	public String startScan(String ciUploadId, String jwtToken) throws JsonProcessingException {
@@ -43,7 +48,9 @@ public class ScanServiceImpl {
 		try {
 			response = restTemplate.postForEntity(URLConstants.START_SCAN_URL, requestEntity, String.class);
 		} catch(Exception e) {
-			throw new ScanStartException("Something went wrong while trying to start your scan for id " + ciUploadId);
+			String error = "Something went wrong while trying to start your scan for id " + ciUploadId;
+			sendErrorNotification(ciUploadId, error);
+			throw new ScanStartException(error);
 		}
 
 		if (response.getStatusCode().is2xxSuccessful()) {
@@ -59,11 +66,27 @@ public class ScanServiceImpl {
 			
 			scanRepository.save(scan);
 			
+			rabbitMQSender.sendMessage(NotificationDTO.builder()
+					.event("Scan started for CI Upload ID " + ciUploadId)
+					.message(String.format("Scan started for files with repositoryId %s and commitId %s and ci-uploadId %s.", repositoryId, commitId, ciUploadId))
+					.build());
+			
 			return String.format("Files were uploaded successfully and scan started with repositoryId %s and commitId %s and ci-uploadId %s.", repositoryId, commitId, ciUploadId); 
 		} else {
-			throw new ScanStartException("Scan for id " + ciUploadId + " could not be started. Response code " + response.getStatusCode());
+			String error = "Scan for id " + ciUploadId + " could not be started. Response code " + response.getStatusCode();
+			sendErrorNotification(ciUploadId, error);
+			throw new ScanStartException(error);
 		}
 
+	}
+	
+	private void sendErrorNotification(String ciUploadId, String error) {
+		System.out.println(error);
+		
+		rabbitMQSender.sendMessage(NotificationDTO.builder()
+				.event("Upload Unsuccessful" + (ciUploadId.isBlank() ? "" : " for CI Upload ID " + ciUploadId))
+				.message(error)
+				.build());
 	}
 	
 }

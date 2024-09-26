@@ -64,7 +64,7 @@ public class UploadServiceImpl implements UploadService {
 				response = restTemplate.postForEntity(URLConstants.UPLOAD_URL, requestEntity, String.class);	
 			} catch (Exception e) {
 				String error = "File with name " + file.getOriginalFilename() + " could not be uploaded. Scan will not be started.";
-				sendNotification(ciUploadId, error);
+				sendErrorNotification(ciUploadId, error);
 				throw new FileUploadException(error);
 			}
 
@@ -76,21 +76,21 @@ public class UploadServiceImpl implements UploadService {
 				}
 			} else {
 				String error = "File with name " + file.getOriginalFilename() + " could not be uploaded. Scan will not be started.";
-				sendNotification(ciUploadId, error);
+				sendErrorNotification(ciUploadId, error);
 				throw new FileUploadException(error);
 			}
 			
 		}
 		
 		rabbitMQSender.sendMessage(NotificationDTO.builder()
-				.event("Upload Successful for " + ciUploadId)
+				.event("Upload Successful for CI Upload ID " + ciUploadId)
 				.message(String.format("All files were uploaded successfully with ci-uploadId %s. Scan will be triggered.", ciUploadId))
 				.build());
 
 		return scanService.startScan(ciUploadId, jwtToken);
 	}
 
-	private void sendNotification(String ciUploadId, String error) {
+	private void sendErrorNotification(String ciUploadId, String error) {
 		System.out.println(error);
 		
 		rabbitMQSender.sendMessage(NotificationDTO.builder()
