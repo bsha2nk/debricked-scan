@@ -1,11 +1,9 @@
 package com.bsha2nk.service.impl;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +22,10 @@ import com.bsha2nk.util.Utilities;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Service
+@Slf4j
 public class UploadServiceImpl implements UploadService {
 
 	@Autowired
@@ -46,10 +47,8 @@ public class UploadServiceImpl implements UploadService {
 		HttpHeaders headers = Utilities.getMultipartHeaders(jwtToken);
 
 		for (MultipartFile file : files) {
-			String tempFileName = createTempFile(file);
-
 			MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-			body.add("fileData", new FileSystemResource(tempFileName));
+			body.add("fileData", file.getResource());
 			body.add("repositoryName", repositoryName);
 			body.add("commitName", commitName);
 
@@ -64,19 +63,19 @@ public class UploadServiceImpl implements UploadService {
 				response = restTemplate.postForEntity(URLConstants.UPLOAD_URL, requestEntity, String.class);	
 			} catch (Exception e) {
 				String error = "File with name " + file.getOriginalFilename() + " could not be uploaded. Scan will not be started.";
-				sendErrorNotification(ciUploadId, error);
+				sendErrorNotification(ciUploadId, file.getOriginalFilename(), error);
 				throw new FileUploadException(error);
 			}
 
 			if (Objects.nonNull(response) && response.getStatusCode().is2xxSuccessful()) {
-				System.out.println("File upload status for file " + file.getOriginalFilename() + ": " + response.getStatusCode());
+				log.info("File upload status for file " + file.getOriginalFilename() + ": " + response.getStatusCode());
 				if (ciUploadId.isBlank()) {
 					JsonNode jsonNode = mapper.readTree(response.getBody());
 					ciUploadId = jsonNode.findValue("ciUploadId").asText();
 				}
 			} else {
 				String error = "File with name " + file.getOriginalFilename() + " could not be uploaded. Scan will not be started.";
-				sendErrorNotification(ciUploadId, error);
+				sendErrorNotification(ciUploadId, file.getOriginalFilename(), error);
 				throw new FileUploadException(error);
 			}
 			
@@ -90,23 +89,13 @@ public class UploadServiceImpl implements UploadService {
 		return scanService.startScan(ciUploadId, jwtToken);
 	}
 
-	private void sendErrorNotification(String ciUploadId, String error) {
-		System.out.println(error);
+	private void sendErrorNotification(String ciUploadId, String fileName, String error) {
+		log.warn(error);
 		
 		rabbitMQSender.sendMessage(NotificationDTO.builder()
-				.event("Upload Unsuccessful" + (ciUploadId.isBlank() ? "" : " for CI Upload ID " + ciUploadId))
+				.event("Upload Unsuccessful" + (ciUploadId.isBlank() ? " for file " + fileName : " for CI Upload ID " + ciUploadId))
 				.message(error)
 				.build());
-	}
-
-	private String createTempFile(MultipartFile file) throws IOException {
-		String tempFileName = "/tmp/" + file.getOriginalFilename();
-
-		try (FileOutputStream fo = new FileOutputStream(tempFileName)) {
-			fo.write(file.getBytes());
-		}
-
-		return tempFileName;
 	}
 
 }

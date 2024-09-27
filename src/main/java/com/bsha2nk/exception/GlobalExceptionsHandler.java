@@ -49,6 +49,7 @@ public class GlobalExceptionsHandler {
 	public ResponseEntity<ErrorMessage> allExceptions(Exception e) {
 		ErrorMessage message = new ErrorMessage();
 		message.setMessage(e.getMessage());
+
 		return ResponseEntity.internalServerError().body(message);
 	}
 	

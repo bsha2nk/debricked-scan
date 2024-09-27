@@ -20,7 +20,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Service
+@Slf4j
 public class ScanServiceImpl {
 	
 	@Autowired
@@ -71,7 +74,10 @@ public class ScanServiceImpl {
 					.message(String.format("Scan started for files with repositoryId %s and commitId %s and ci-uploadId %s.", repositoryId, commitId, ciUploadId))
 					.build());
 			
-			return String.format("Files were uploaded successfully and scan started with repositoryId %s and commitId %s and ci-uploadId %s.", repositoryId, commitId, ciUploadId); 
+			String successResponse = String.format("Files were uploaded successfully and scan started with repositoryId %s and commitId %s and ci-uploadId %s.",
+					repositoryId, commitId, ciUploadId); 
+			log.info(successResponse);
+			return successResponse; 
 		} else {
 			String error = "Scan for id " + ciUploadId + " could not be started. Response code " + response.getStatusCode();
 			sendErrorNotification(ciUploadId, error);
@@ -81,7 +87,7 @@ public class ScanServiceImpl {
 	}
 	
 	private void sendErrorNotification(String ciUploadId, String error) {
-		System.out.println(error);
+		log.warn(error);
 		
 		rabbitMQSender.sendMessage(NotificationDTO.builder()
 				.event("Upload Unsuccessful" + (ciUploadId.isBlank() ? "" : " for CI Upload ID " + ciUploadId))
