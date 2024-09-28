@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -61,6 +62,10 @@ public class UploadServiceImpl implements UploadService {
 			ResponseEntity<String> response;
 			try {
 				response = restTemplate.postForEntity(URLConstants.UPLOAD_URL, requestEntity, String.class);	
+			} catch (HttpClientErrorException e) {
+				String error = "File(s) could not be uploaded. The presented JWT may not be valid. Scan will not be started.";
+				sendErrorNotification(ciUploadId, file.getOriginalFilename(), error);
+				throw new FileUploadException(error);
 			} catch (Exception e) {
 				String error = "File with name " + file.getOriginalFilename() + " could not be uploaded. Scan will not be started.";
 				sendErrorNotification(ciUploadId, file.getOriginalFilename(), error);

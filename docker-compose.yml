@@ -9,6 +9,7 @@ services:
       - spring.datasource.url=jdbc:mysql://mysqldb:3306/debricked-scans
       - spring.rabbitmq.host=rabbitmq
       - jwt-token=
+      - status-check-interval=30000
     depends_on:
       mysqldb:
         condition: service_healthy
@@ -20,10 +21,12 @@ services:
     networks:
       - debricked-net
     environment:
+      - spring.rabbitmq.host=rabbitmq
       - spring.mail.username=
       - spring.mail.password=
-      - spring.rabbitmq.host=rabbitmq
       - slack-bot-token=
+      - slack-channel-id=
+      - email-recipient=
     depends_on:
       mysqldb:
         condition: service_healthy
