@@ -22,7 +22,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Component
+@Slf4j
 public class ScanStatusPoller {
 
 	@Autowired
@@ -41,9 +44,10 @@ public class ScanStatusPoller {
 	private void pollStatus() {
 		List<Scan> scans = scanRepository.findIncompleteScans();
 		if (!scans.isEmpty()) {
-			System.out.println("Found incomplete scans, will poll for current status.");
+			log.info("Found incomplete scans, will poll for current status.");
 		} else {
-			System.out.println("All scans completed.");
+			log.info("All scans completed.");
+			return;
 		}
 
 		HttpHeaders headers = new HttpHeaders();
@@ -61,33 +65,37 @@ public class ScanStatusPoller {
 			ResponseEntity<String> statusResponse = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
 
 			if (statusResponse.getStatusCode().is2xxSuccessful()) {
-				JsonNode jsonNode;
 				try {
-					jsonNode = mapper.readTree(statusResponse.getBody());
-					String status = jsonNode.findValue("progress").asText();
-					if (status.equals("100")) {
-						scan.setStatus("complete");
-						int numOfVulnerabilities = jsonNode.findValue("vulnerabilitiesFound").asInt();
-						if (numOfVulnerabilities > 3) {
-							rabbitMQSender.sendMessage(NotificationDTO.builder()
-									.event("Scan complete for CI Upload ID " + scan.getUploadId())
-									.message(String.format("Found %s vulnerabilities.", numOfVulnerabilities))
-									.build());
-						}
-					} else {
-						scan.setStatus("progress");
-						rabbitMQSender.sendMessage(NotificationDTO.builder()
-								.event("Scan in progress for CI Upload ID " + scan.getUploadId())
-								.message("Scan in progress for CI Upload ID " + scan.getUploadId())
-								.build());
-					}
-
-					scanRepository.save(scan);
+					scanStartSuccess(scan, statusResponse);
 				} catch (JsonProcessingException e) {
 					throw new RuntimeException("Error retrieving status for upload id " + scan.getUploadId());
 				}
 			}
 		});
+	}
+
+	private void scanStartSuccess(Scan scan, ResponseEntity<String> statusResponse) throws JsonProcessingException {
+		JsonNode jsonNode = mapper.readTree(statusResponse.getBody());
+		String status = jsonNode.findValue("progress").asText();
+		
+		if (status.equals("100")) {
+			scan.setStatus("complete");
+			int numOfVulnerabilities = jsonNode.findValue("vulnerabilitiesFound").asInt();
+			if (numOfVulnerabilities > 3) {
+				rabbitMQSender.sendMessage(NotificationDTO.builder()
+						.event("Scan complete for CI Upload ID " + scan.getUploadId())
+						.message(String.format("Found %s vulnerabilities.", numOfVulnerabilities))
+						.build());
+			}
+		} else {
+			scan.setStatus("progress");
+			rabbitMQSender.sendMessage(NotificationDTO.builder()
+					.event("Scan in progress for CI Upload ID " + scan.getUploadId())
+					.message("Scan in progress for CI Upload ID " + scan.getUploadId())
+					.build());
+		}
+
+		scanRepository.save(scan);
 	}
 
 }

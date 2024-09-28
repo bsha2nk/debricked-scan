@@ -2,6 +2,8 @@ package com.bsha2nk.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
@@ -50,10 +52,11 @@ class UploadServiceImplTest {
 		assertThrows(FileUploadException.class, () -> uploadService.upload(files, "jwt", "repositoryName", "commitName"));
 	}
 	
-//	@Test
+	@Test
 	void test_upload_responseCode_not_success() throws FileNotFoundException, IOException {
-		ResponseEntity responseEntity = new ResponseEntity<>(HttpStatusCode.valueOf(300));
-		when(restTemplate.postForEntity(any(), any(), any())).thenReturn(responseEntity);
+		ResponseEntity<String> responseEntity = new ResponseEntity<>(HttpStatusCode.valueOf(300));
+		
+		when(restTemplate.postForEntity(anyString(), any(), eq(String.class))).thenReturn(responseEntity);
 		
 		MultipartFile[] files = new MultipartFile[1];
 		File file = new File(UploadServiceImplTest.class.getClassLoader().getResource("test_file.txt").getFile());
