@@ -21,6 +21,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.bsha2nk.exception.FileUploadException;
+import com.bsha2nk.message.broker.RabbitMQSender;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @ExtendWith(SpringExtension.class)
@@ -31,6 +32,9 @@ class UploadServiceImplTest {
 	
 	@Mock
 	private RestTemplate restTemplate;
+	
+	@Mock
+	private RabbitMQSender rabbitMQSender;
 	
 	@InjectMocks
 	private UploadServiceImpl uploadService;
