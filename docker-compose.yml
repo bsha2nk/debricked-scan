@@ -20,7 +20,10 @@ services:
     networks:
       - debricked-net
     environment:
+      - spring.mail.username=
+      - spring.mail.password=
       - spring.rabbitmq.host=rabbitmq
+      - slack-bot-token=
     depends_on:
       mysqldb:
         condition: service_healthy
