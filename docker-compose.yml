@@ -1,6 +1,6 @@
 services:
   debricked-scan:
-    image: debricked-scan
+    image: bsha2nk/debricked-scan:latest
     ports:
       - 8080:8080
     networks:
@@ -14,7 +14,7 @@ services:
         condition: service_healthy
 
   debricked-scan-notification:
-    image: debricked-scan-notification
+    image: bsha2nk/debricked-scan-notification:latest
     ports:
       - 8081:8080
     networks:
@@ -29,7 +29,7 @@ services:
         condition: service_healthy
 
   mysqldb:
-    image: mysql
+    image: mysql:9.0.1
     ports:
       - 3306:3306
     networks:
